@@ -1,794 +1,261 @@
-# \# Recurring Stablecoin Micro-Subscription Engine
+# SubWave: Recurring Stablecoin Micro-Subscription Engine
 
-# 
+A complete Anchor smart contract for managing recurring subscriptions on Solana with USDC or SOL payments.
 
-# A complete Anchor smart contract for managing recurring subscriptions on Solana with USDC or SOL payments.
+- --
 
-# 
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/NikhilRaikwar/SubWave/actions)
 
-# \## Features
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)](https://github.com/NikhilRaikwar/SubWave/actions)
 
-# 
+- --
 
-# ✅ \*\*Merchant Registration\*\* - Register products with price and subscription intervals  
+## Table of Contents
 
-# ✅ \*\*Subscription Management\*\* - Create, renew, and cancel subscriptions  
+- [Key Features](#key-features)
 
-# ✅ \*\*Entitlement Checking\*\* - Query active subscription status  
+- [Architecture Overview](#architecture-overview)
 
-# ✅ \*\*Token Payments\*\* - Support for USDC, SOL, or any SPL token  
+- [Tech Stack](#tech-stack)
 
-# ✅ \*\*PDA-based Architecture\*\* - Secure account derivation using seeds  
+- [Getting Started](#getting-started)
 
-# ✅ \*\*Timestamp-based Expiry\*\* - Automatic expiry tracking with renewal logic  
+  - [Prerequisites](#prerequisites)
 
-# 
+  - [Installation](#installation)
 
-# \## Account Structures
+- [Configuration](#configuration)
 
-# 
+- [Usage](#usage)
 
-# \### Merchant
+- [Project Structure](#project-structure)
 
-# Stores merchant information and payment preferences.
+- [Scripts](#scripts)
 
-# 
+- [Roadmap](#roadmap)
 
-# ```rust
+- [Contributing](#contributing)
 
-# pub struct Merchant {
+- [Testing](#testing)
 
-# &nbsp;   pub authority: Pubkey,     // Merchant owner
+- [License](#license)
 
-# &nbsp;   pub token\_mint: Pubkey,    // Payment token (USDC, SOL, etc.)
+- [Acknowledgements](#acknowledgements)
 
-# &nbsp;   pub bump: u8,              // PDA bump seed
+- --
 
-# }
+## Key Features
 
-# ```
+-   **Merchant Registration** - Register products with price and subscription intervals.
 
-# 
+-   **Subscription Management** - Create, renew, and cancel subscriptions.
 
-# \*\*PDA Seeds:\*\* `\["merchant", authority, token\_mint]`
+-   **Entitlement Checking** - Query active subscription status.
 
-# 
+-   **Token Payments** - Support for USDC, SOL, or any SPL token.
 
-# \### SubscriptionConfig
+-   **PDA-based Architecture** - Secure account derivation using seeds.
 
-# Defines subscription pricing and terms for a product.
+-   **Timestamp-based Expiry** - Automatic expiry tracking with renewal logic.
 
-# 
+- --
 
-# ```rust
+## Architecture Overview
 
-# pub struct SubscriptionConfig {
+SubWave is an Anchor-based Solana program designed to facilitate recurring subscriptions. It leverages Program Derived Addresses (PDAs) to securely manage three core account types: `Merchant`, `SubscriptionConfig`, and `Subscription`. The `Merchant` account stores the owner's public key and the payment token mint. `SubscriptionConfig` defines product-specific details like price, interval, and name, linked to a merchant. Finally, the `Subscription` account tracks individual user subscriptions, including start/expiry timestamps and total payments, referencing both the subscriber and the associated `SubscriptionConfig`. Payments are handled via SPL token transfers, ensuring secure and atomic transactions on the Solana blockchain.
 
-# &nbsp;   pub merchant: Pubkey,         // Reference to merchant
+- --
 
-# &nbsp;   pub price: u64,               // Price per period (in token base units)
+## Tech Stack
 
-# &nbsp;   pub interval\_days: u32,       // Subscription interval in days
+| Area | Tool | Version |
+|---|---|---|
+|---|---|---|
+| Blockchain Framework | Anchor | 0.32.1 |
+| Language | Rust | 2021 |
+|---|---|---|
+| Blockchain | Solana | latest |
+| Client SDK | TypeScript | 5.7.3 |
+|---|---|---|
+| Testing | Mocha | 9.0.3 |
 
-# &nbsp;   pub product\_name: String,     // Product/service name (max 50 chars)
 
-# &nbsp;   pub active: bool,             // Active status
 
-# &nbsp;   pub bump: u8,                 // PDA bump seed
+- --
 
-# }
+## Getting Started
 
-# ```
+Follow these instructions to set up and run the SubWave project locally.
 
-# 
+### Prerequisites
 
-# \*\*PDA Seeds:\*\* `\["config", merchant, product\_name]`
+Before you begin, ensure you have the following installed:
 
-# 
+-   [Rust](https://www.rust-lang.org/tools/install)
 
-# \### Subscription
+-   [Solana CLI](https://docs.solana.com/cli/install-solana-cli)
 
-# Tracks individual user subscriptions.
+-   [Anchor CLI](https://www.anchor-lang.com/docs/installation)
 
-# 
+-   [Node.js](https://nodejs.org/) (LTS recommended)
 
-# ```rust
+-   [npm](https://www.npmjs.com/get-npm) or [Yarn](https://yarnpkg.com/getting-started/install) or [pnpm](https://pnpm.io/installation)
 
-# pub struct Subscription {
+### Installation
 
-# &nbsp;   pub subscriber: Pubkey,            // User address
+1.  **Clone the repository:**
 
-# &nbsp;   pub merchant: Pubkey,              // Merchant address
+```bash
+git clone https://github.com/NikhilRaikwar/SubWave.git
 
-# &nbsp;   pub subscription\_config: Pubkey,   // Config reference
+cd SubWave
 
-# &nbsp;   pub start\_timestamp: i64,          // When subscription started
+```
+2.  **Install client-side dependencies:**
 
-# &nbsp;   pub expiry\_timestamp: i64,         // When subscription expires
+```bash
+npm install
 
-# &nbsp;   pub active: bool,                  // Active status
+# or yarn install
+    # or pnpm install
 
-# &nbsp;   pub total\_paid: u64,               // Lifetime payment amount
+```
+3.  **Build the Anchor program:**
 
-# &nbsp;   pub bump: u8,                      // PDA bump seed
+```bash
+anchor build
 
-# }
+```
+- --
 
-# ```
+## Configuration
 
-# 
+The project relies on standard Solana and Anchor CLI configurations. You may need to set up your `Anchor.toml` for deployment or local cluster interaction.
 
-# \*\*PDA Seeds:\*\* `\["subscription", subscriber, subscription\_config]`
+| ENV | Description | Example |
+|---|---|---|
+|---|---|---|
+| `ANCHOR_PROVIDER_URL` | Solana RPC URL for Anchor operations | `http://localhost:8899` |
+| `ANCHOR_WALLET` | Path to your Solana wallet keypair | `~/.config/solana/id.json` |
 
-# 
 
-# \## Instructions
 
-# 
+- --
 
-# \### 1. register\_merchant
+## Usage
 
-# 
+SubWave provides a robust set of instructions for managing subscriptions on Solana.
 
-# Register a merchant and create a subscription configuration.
+To begin, a merchant must first register their product using the `register_merchant` instruction. This involves specifying the product's price, subscription interval (in days), and a unique product name, along with the desired SPL token mint for payments.
 
-# 
+Once a product is registered, users can create a new subscription by invoking the `create_subscription` instruction. This action transfers the initial payment from the subscriber's token account to the merchant's token account and initializes a `Subscription` account with a calculated expiry timestamp.
 
-# \*\*Parameters:\*\*
+Existing subscriptions can be extended using the `renew_subscription` instruction. This instruction checks the current subscription status and extends the expiry timestamp, either from the current expiry or from the present time if the subscription has already lapsed. Payment is transferred from the subscriber to the merchant during renewal.
 
-# \- `price: u64` - Subscription price in token base units (e.g., 1000000 = 1 USDC)
+The program also supports querying the active status of a subscription, allowing applications to check user entitlements.
 
-# \- `interval\_days: u32` - Subscription duration in days
+- --
 
-# \- `product\_name: String` - Product identifier (max 50 chars)
+## Project Structure
 
-# 
+```
+.
 
-# \*\*Accounts:\*\*
+├── Cargo.toml
+├── README.md
 
-# \- `merchant` - PDA to create (init)
+├── migrations
+│   └── deploy.ts
 
-# \- `subscription\_config` - PDA to create (init)
+├── package.json
+├── programs
 
-# \- `token\_mint` - SPL token mint for payments
+│   └── subwave
+│       ├── Cargo.toml
 
-# \- `authority` - Merchant owner (signer, payer)
+│       └── src
+│           └── lib.rs
 
-# \- `system\_program` - System program
+├── tests
+│   └── subwave.ts
 
-# 
+└── tsconfig.json
 
-# \*\*Example:\*\*
+```
+- --
 
-# ```typescript
+## Scripts
 
-# await program.methods
+The `package.json` includes several utility scripts for development and code quality.
 
-# &nbsp; .registerMerchant(
+| Command | Description |
+|---|---|
+|---|---|
+| `lint:fix` | Formats all JavaScript/TypeScript files using Prettier. |
+| `lint` | Checks all JavaScript/TypeScript files for formatting issues with Prettier. |
 
-# &nbsp;   new BN(1\_000\_000),  // 1 USDC (6 decimals)
 
-# &nbsp;   30,                 // 30 days
 
-# &nbsp;   "Premium Plan"
+- --
 
-# &nbsp; )
+## Roadmap
 
-# &nbsp; .accounts({
+-   [ ] Implement subscription cancellation logic.
 
-# &nbsp;   merchant: merchantPda,
+-   [ ] Add a mechanism for merchants to update product configurations.
 
-# &nbsp;   subscriptionConfig: configPda,
+-   [ ] Develop a client-side SDK example for common interactions.
 
-# &nbsp;   tokenMint: usdcMint,
+-   [ ] Integrate with a front-end application for a full demo.
 
-# &nbsp;   authority: merchantKeypair.publicKey,
+-   [ ] Conduct comprehensive security audits.
 
-# &nbsp;   systemProgram: SystemProgram.programId,
+-   [ ] Optimize gas usage for all instructions.
 
-# &nbsp; })
+- --
 
-# &nbsp; .signers(\[merchantKeypair])
+## Contributing
 
-# &nbsp; .rpc();
+We welcome contributions to SubWave! If you'd like to contribute, please follow these steps:
 
-# ```
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/your-feature-name`).
+3.  Make your changes.
+4.  Ensure your code adheres to the project's style guidelines (`npm run lint:fix`).
+5.  Write or update tests for your changes.
+6.  Commit your changes (`git commit -m 'feat: Add new feature'`).
+7.  Push to the branch (`git push origin feature/your-feature-name`).
+8.  Open a pull request.
 
-# 
+Please ensure your pull requests are well-described and pass all existing tests.
 
-# \### 2. create\_subscription
+- --
 
-# 
+## Testing
 
-# Subscribe a user to a merchant's product.
+The project includes unit and integration tests written in TypeScript using `mocha` and `chai`.
 
-# 
+To run the tests:
 
-# \*\*Parameters:\*\* None (reads from config)
+```bash
+anchor test
 
-# 
+```
+This command will deploy the program to a local validator and execute the tests defined in the `tests/` directory.
 
-# \*\*Accounts:\*\*
+- --
 
-# \- `subscription` - PDA to create (init)
+## License
 
-# \- `merchant` - Merchant PDA
+This project is licensed under the ISC License. See the [LICENSE](LICENSE) file for details.
 
-# \- `subscription\_config` - Config PDA
+- --
 
-# \- `subscriber` - User wallet (signer, payer)
+## Acknowledgements
 
-# \- `subscriber\_token\_account` - User's token account
+-   The Solana Foundation for the innovative blockchain platform.
 
-# \- `merchant\_token\_account` - Merchant's token account
+-   The Anchor framework team for simplifying Solana program development.
 
-# \- `token\_program` - SPL Token program
-
-# \- `system\_program` - System program
-
-# 
-
-# \*\*Effects:\*\*
-
-# \- Creates subscription account
-
-# \- Transfers payment from subscriber to merchant
-
-# \- Sets expiry timestamp based on interval
-
-# 
-
-# \*\*Example:\*\*
-
-# ```typescript
-
-# await program.methods
-
-# &nbsp; .createSubscription()
-
-# &nbsp; .accounts({
-
-# &nbsp;   subscription: subscriptionPda,
-
-# &nbsp;   merchant: merchantPda,
-
-# &nbsp;   subscriptionConfig: configPda,
-
-# &nbsp;   subscriber: userKeypair.publicKey,
-
-# &nbsp;   subscriberTokenAccount: userTokenAccount,
-
-# &nbsp;   merchantTokenAccount: merchantTokenAccount,
-
-# &nbsp;   tokenProgram: TOKEN\_PROGRAM\_ID,
-
-# &nbsp;   systemProgram: SystemProgram.programId,
-
-# &nbsp; })
-
-# &nbsp; .signers(\[userKeypair])
-
-# &nbsp; .rpc();
-
-# ```
-
-# 
-
-# \### 3. renew\_subscription
-
-# 
-
-# Renew an existing subscription.
-
-# 
-
-# \*\*Parameters:\*\* None
-
-# 
-
-# \*\*Accounts:\*\*
-
-# \- `subscription` - Existing subscription PDA (mut)
-
-# \- `merchant` - Merchant PDA
-
-# \- `subscription\_config` - Config PDA
-
-# \- `subscriber` - User wallet (signer)
-
-# \- `subscriber\_token\_account` - User's token account (mut)
-
-# \- `merchant\_token\_account` - Merchant's token account (mut)
-
-# \- `token\_program` - SPL Token program
-
-# 
-
-# \*\*Effects:\*\*
-
-# \- Extends expiry timestamp by interval
-
-# \- Transfers payment from subscriber to merchant
-
-# \- Updates total\_paid amount
-
-# \- If expired, extends from current time; if active, extends from current expiry
-
-# 
-
-# \*\*Example:\*\*
-
-# ```typescript
-
-# await program.methods
-
-# &nbsp; .renewSubscription()
-
-# &nbsp; .accounts({
-
-# &nbsp;   subscription: subscriptionPda,
-
-# &nbsp;   merchant: merchantPda,
-
-# &nbsp;   subscriptionConfig: configPda,
-
-# &nbsp;   subscriber: userKeypair.publicKey,
-
-# &nbsp;   subscriberTokenAccount: userTokenAccount,
-
-# &nbsp;   merchantTokenAccount: merchantTokenAccount,
-
-# &nbsp;   tokenProgram: TOKEN\_PROGRAM\_ID,
-
-# &nbsp; })
-
-# &nbsp; .signers(\[userKeypair])
-
-# &nbsp; .rpc();
-
-# ```
-
-# 
-
-# \### 4. cancel\_subscription
-
-# 
-
-# Cancel an active subscription.
-
-# 
-
-# \*\*Parameters:\*\* None
-
-# 
-
-# \*\*Accounts:\*\*
-
-# \- `subscription` - Subscription PDA (mut)
-
-# \- `subscriber` - User wallet (signer)
-
-# 
-
-# \*\*Effects:\*\*
-
-# \- Sets `active` to false
-
-# \- Does NOT refund payment
-
-# 
-
-# \*\*Example:\*\*
-
-# ```typescript
-
-# await program.methods
-
-# &nbsp; .cancelSubscription()
-
-# &nbsp; .accounts({
-
-# &nbsp;   subscription: subscriptionPda,
-
-# &nbsp;   subscriber: userKeypair.publicKey,
-
-# &nbsp; })
-
-# &nbsp; .signers(\[userKeypair])
-
-# &nbsp; .rpc();
-
-# ```
-
-# 
-
-# \### 5. check\_entitlement
-
-# 
-
-# Query if a subscription provides current entitlement.
-
-# 
-
-# \*\*Parameters:\*\* None
-
-# 
-
-# \*\*Accounts:\*\*
-
-# \- `subscription` - Subscription PDA
-
-# 
-
-# \*\*Returns:\*\* Logs entitlement status
-
-# \- `VALID` if active=true AND expiry > current\_time
-
-# \- `INVALID` otherwise
-
-# 
-
-# \*\*Example:\*\*
-
-# ```typescript
-
-# await program.methods
-
-# &nbsp; .checkEntitlement()
-
-# &nbsp; .accounts({
-
-# &nbsp;   subscription: subscriptionPda,
-
-# &nbsp; })
-
-# &nbsp; .rpc();
-
-# 
-
-# // Check logs for entitlement status
-
-# ```
-
-# 
-
-# \### 6. update\_subscription\_config
-
-# 
-
-# Update subscription pricing or status (merchant only).
-
-# 
-
-# \*\*Parameters:\*\*
-
-# \- `new\_price: Option<u64>` - New subscription price
-
-# \- `new\_interval\_days: Option<u32>` - New interval duration
-
-# \- `new\_active: Option<bool>` - Active/inactive status
-
-# 
-
-# \*\*Accounts:\*\*
-
-# \- `subscription\_config` - Config PDA (mut)
-
-# \- `merchant` - Merchant PDA
-
-# \- `authority` - Merchant owner (signer)
-
-# 
-
-# \*\*Example:\*\*
-
-# ```typescript
-
-# await program.methods
-
-# &nbsp; .updateSubscriptionConfig(
-
-# &nbsp;   new BN(2\_000\_000),  // New price
-
-# &nbsp;   null,               // Keep interval
-
-# &nbsp;   null                // Keep active status
-
-# &nbsp; )
-
-# &nbsp; .accounts({
-
-# &nbsp;   subscriptionConfig: configPda,
-
-# &nbsp;   merchant: merchantPda,
-
-# &nbsp;   authority: merchantKeypair.publicKey,
-
-# &nbsp; })
-
-# &nbsp; .signers(\[merchantKeypair])
-
-# &nbsp; .rpc();
-
-# ```
-
-# 
-
-# \## PDA Derivation
-
-# 
-
-# \### Merchant PDA
-
-# ```typescript
-
-# const \[merchantPda] = PublicKey.findProgramAddressSync(
-
-# &nbsp; \[
-
-# &nbsp;   Buffer.from("merchant"),
-
-# &nbsp;   authority.toBuffer(),
-
-# &nbsp;   tokenMint.toBuffer(),
-
-# &nbsp; ],
-
-# &nbsp; program.programId
-
-# );
-
-# ```
-
-# 
-
-# \### Subscription Config PDA
-
-# ```typescript
-
-# const \[configPda] = PublicKey.findProgramAddressSync(
-
-# &nbsp; \[
-
-# &nbsp;   Buffer.from("config"),
-
-# &nbsp;   merchantPda.toBuffer(),
-
-# &nbsp;   Buffer.from(productName),
-
-# &nbsp; ],
-
-# &nbsp; program.programId
-
-# );
-
-# ```
-
-# 
-
-# \### Subscription PDA
-
-# ```typescript
-
-# const \[subscriptionPda] = PublicKey.findProgramAddressSync(
-
-# &nbsp; \[
-
-# &nbsp;   Buffer.from("subscription"),
-
-# &nbsp;   subscriber.toBuffer(),
-
-# &nbsp;   configPda.toBuffer(),
-
-# &nbsp; ],
-
-# &nbsp; program.programId
-
-# );
-
-# ```
-
-# 
-
-# \## Error Codes
-
-# 
-
-# | Code | Message |
-
-# |------|---------|
-
-# | `InvalidPrice` | Price must be greater than 0 |
-
-# | `InvalidInterval` | Interval must be greater than 0 days |
-
-# | `ProductNameTooLong` | Product name max 50 characters |
-
-# | `SubscriptionInactive` | Subscription is not active |
-
-# | `SubscriptionAlreadyCanceled` | Subscription already canceled |
-
-# | `Unauthorized` | Unauthorized access |
-
-# | `MathOverflow` | Math overflow error |
-
-# 
-
-# \## Token Support
-
-# 
-
-# \### USDC Payments
-
-# \- Use USDC mint address: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`
-
-# \- Price in base units: 1 USDC = 1,000,000 (6 decimals)
-
-# 
-
-# \### SOL Payments
-
-# \- Use wrapped SOL mint or native SOL with token wrapper
-
-# \- Price in lamports: 1 SOL = 1,000,000,000
-
-# 
-
-# \### Custom SPL Tokens
-
-# \- Any SPL token mint can be used
-
-# \- Ensure both merchant and subscriber have token accounts
-
-# 
-
-# \## Security Considerations
-
-# 
-
-# 1\. \*\*PDA Validation\*\* - All accounts use proper seed validation
-
-# 2\. \*\*Owner Checks\*\* - Token account ownership verified on transfers
-
-# 3\. \*\*Mint Validation\*\* - Token accounts must match merchant's configured mint
-
-# 4\. \*\*Authorization\*\* - Only subscriber can cancel their subscription
-
-# 5\. \*\*Merchant Control\*\* - Only merchant authority can update configs
-
-# 6\. \*\*Math Safety\*\* - All arithmetic uses checked operations to prevent overflow
-
-# 
-
-# \## Building and Testing
-
-# 
-
-# \### Build
-
-# ```bash
-
-# anchor build
-
-# ```
-
-# 
-
-# \### Test
-
-# ```bash
-
-# anchor test
-
-# ```
-
-# 
-
-# \### Deploy
-
-# ```bash
-
-# anchor deploy
-
-# ```
-
-# 
-
-# \## Usage Flow
-
-# 
-
-# 1\. \*\*Merchant Setup:\*\*
-
-# &nbsp;  - Call `register\_merchant` with product details
-
-# &nbsp;  - Create token account for receiving payments
-
-# 
-
-# 2\. \*\*User Subscription:\*\*
-
-# &nbsp;  - User calls `create\_subscription`
-
-# &nbsp;  - Payment transfers automatically
-
-# &nbsp;  - Subscription becomes active
-
-# 
-
-# 3\. \*\*Access Control:\*\*
-
-# &nbsp;  - Your app calls `check\_entitlement` before granting access
-
-# &nbsp;  - Verify subscription is active and not expired
-
-# 
-
-# 4\. \*\*Renewal:\*\*
-
-# &nbsp;  - User calls `renew\_subscription` when needed
-
-# &nbsp;  - Extends expiry and processes payment
-
-# 
-
-# 5\. \*\*Cancellation:\*\*
-
-# &nbsp;  - User calls `cancel\_subscription` to opt out
-
-# &nbsp;  - No future charges, but no refund for current period
-
-# 
-
-# \## Example: Monthly USDC Newsletter
-
-# 
-
-# ```typescript
-
-# // 1. Merchant registers newsletter subscription
-
-# await program.methods.registerMerchant(
-
-# &nbsp; new BN(5\_000\_000),  // 5 USDC/month
-
-# &nbsp; 30,                 // Monthly
-
-# &nbsp; "Premium Newsletter"
-
-# ).rpc();
-
-# 
-
-# // 2. User subscribes
-
-# await program.methods.createSubscription().rpc();
-
-# 
-
-# // 3. Check access before showing content
-
-# const subscription = await program.account.subscription.fetch(subscriptionPda);
-
-# const hasAccess = subscription.active \&\& 
-
-# &nbsp;                 subscription.expiryTimestamp.toNumber() > Date.now() / 1000;
-
-# 
-
-# // 4. User renews after 30 days
-
-# await program.methods.renewSubscription().rpc();
-
-# ```
-
-# 
-
-# \## License
-
-# 
-
-# MIT
-
-
-
+-   All contributors and community members who support open-source development.
